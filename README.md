@@ -95,20 +95,20 @@
 +---------------------------------------------------------------------------------------+
 ```
 
-### 📸 Interface & Live Feature Screenshots
+### 📸 Interface & Live Feature Screenshots (Widescreen Advert Showcase)
 
-| Ephemeral Multimodal Scanner | Live GPS Athletic Telemetry |
+| Macro Fuel Synthesis & Real-Time Partitioning | Kinetic Performance Telemetry & Strain |
 | :---: | :---: |
-| <img src="assets/shot_live_s1.jpg" width="340" alt="Scanner" /> | <img src="assets/shot_live_s2.jpg" width="340" alt="GPS Route" /> |
-| **Instant plate inference with zero persistent image retention.** | **Haversine route tracking with stationary jitter suppression.** |
+| <img src="assets/shot_live_s1.jpg" width="450" alt="Macro Fuel Synthesis" /> | <img src="assets/shot_live_s2.jpg" width="450" alt="Kinetic Performance" /> |
+| **Instant biochemical macro partitioning (Carbs, Protein, Healthy Fats) in real-time.** | **Active expenditure (+450 Kinetic XP), Zone 3 peak cardio & VO2 strain.** |
 
-| Clinical Drug Contraindication Alert | Adaptive Cultural Meal Planner |
+| Pharmacokinetic Collision Shield & Auto-Heal | Connected Kinetics Heart GPS Route Map |
 | :---: | :---: |
-| <img src="assets/shot_live_s3.jpg" width="340" alt="Drug Alert" /> | <img src="assets/shot_live_s4.jpg" width="340" alt="Meal Planner" /> |
-| **Deterministic pharmacological matrix blocking high-hazard foods.** | **Cultural macro balance synthesized to caloric targets.** |
+| <img src="assets/shot_live_s3.jpg" width="450" alt="Pharmacokinetic Safety" /> | <img src="assets/shot_live_s4.jpg" width="450" alt="Connected Kinetics Heart Map" /> |
+| **Rx Statin × Grapefruit CYP3A4 collision detection with AI Papaya auto-heal.** | **Parametric dual-runner GPS route map completing a 5.2 km shared heart.** |
 
 ### Media Assets & Live Walkthrough Demos
-- 🎬 **Full Commercial & Walkthrough Video**: `bon-appetit-mobile/assets/NutriPulse_360_LiveAction_Commercial.mp4`
+- 🎬 **Widescreen Showcase Advert**: `assets/NutriPulse_360_Widescreen_Advert.mp4`
 - 🖥️ **Interactive Ad Showcase**: `bon-appetit-mobile/assets/NutriPulse_360_Ad_Showcase.html`
 
 ---
@@ -202,6 +202,6 @@ npm run web
 ---
 
 ## 👥 Engineering & Hackathon Credits
-- **Project Lead & Architecture**: AMD Hackathon Engineering Team
+- **Project Lead & Architecture**: Shiva Kumar Kondala
 - **Clinical Knowledge Base**: NIH RxNav & U.S. National Library of Medicine
-- **Repository**: [Snapbite Documents](https://github.com/Shivakumar74/bon-appetit-mobile)
+- **Repository**: [Snapbite Documents](https://github.com/Shivakumar74/Snapbite-Documents)

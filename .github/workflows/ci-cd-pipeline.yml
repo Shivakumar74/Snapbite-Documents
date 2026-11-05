@@ -27,9 +27,9 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Root & Mobile Dependencies
+      - name: Install Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install
 
       - name: Run ESLint
         run: |
@@ -53,11 +53,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install
 
       - name: Run TypeScript Strict Check (No Emit)
         run: |
-          npx tsc --noEmit
+          npm run typecheck
 
   # ============================================================================
   # Stage 3: Automated Unit Tests & Clinical DDI Matrix Regression
@@ -77,14 +77,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install
 
       - name: Execute Jest Unit Test Suite & Coverage
         run: |
-          npm test --if-present -- --coverage --passWithNoTests
-        env:
-          NODE_ENV: test
-          EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY || 'mock_test_key' }}
+          npm test
 
   # ============================================================================
   # Stage 4: Dependency Vulnerability & Security Audit
@@ -124,10 +121,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install
 
-      - name: Verify Web Build Compilation
+      - name: Verify Build Artifacts
         run: |
-          npx expo export --platform web || echo "Expo web bundle verified"
-        env:
-          NODE_ENV: production
+          npm run build

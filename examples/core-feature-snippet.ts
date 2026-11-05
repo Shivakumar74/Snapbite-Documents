@@ -132,9 +132,11 @@ export const LOCAL_BRAND_DICTIONARY: Record<string, { generic: string; category:
  */
 export function normalizeMedicationInput(rawInput: string): NormalizedDrug {
   const clean = rawInput.trim().toLowerCase();
+  // Strip trailing dosage notations (e.g. " 20mg", " 500 mg", " 5ml", " tab")
+  const baseName = clean.replace(/\s+\d+(\.\d+)?\s*(mg|g|mcg|ml|iu|tablets?|capsules?)?$/i, '').trim();
   
-  // 1. Direct Local Brand Dictionary Match
-  const brandMatch = LOCAL_BRAND_DICTIONARY[clean];
+  // 1. Direct Local Brand Dictionary Match (full string or stripped dosage)
+  const brandMatch = LOCAL_BRAND_DICTIONARY[clean] || LOCAL_BRAND_DICTIONARY[baseName];
   if (brandMatch) {
     return {
       originalInput: rawInput,
@@ -148,12 +150,30 @@ export function normalizeMedicationInput(rawInput: string): NormalizedDrug {
     };
   }
 
-  // 2. Default Direct Passthrough
+  // 2. Check if clean matches any known keyword in deterministic hazard matrix
+  for (const rule of DETERMINISTIC_HAZARD_MATRIX) {
+    for (const kw of rule.keywords) {
+      if (clean.includes(kw) || baseName.includes(kw)) {
+        const titleCase = kw.charAt(0).toUpperCase() + kw.slice(1);
+        return {
+          originalInput: rawInput,
+          displayName: titleCase,
+          genericName: titleCase,
+          activeMolecules: [kw],
+          category: rule.classOrName,
+          isCombination: false,
+          resolutionSource: 'LOCAL_DICTIONARY'
+        };
+      }
+    }
+  }
+
+  // 3. Default Direct Passthrough
   return {
     originalInput: rawInput,
     displayName: rawInput.trim(),
     genericName: rawInput.trim(),
-    activeMolecules: [rawInput.trim()],
+    activeMolecules: [baseName || rawInput.trim()],
     category: 'Unclassified Medication',
     isCombination: false,
     resolutionSource: 'DIRECT'
