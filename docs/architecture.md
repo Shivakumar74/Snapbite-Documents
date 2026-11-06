@@ -18,21 +18,25 @@ flowchart TD
     subgraph ClientLayer["Mobile Client Layer (React Native + Expo SDK 57)"]
         UI["User Interface (Expo Router)"]
         Cam["Camera / Barcode Module"]
-        Sensors["GPS & BLE Hardware Engine"]
+        Sensors["GPS, BLE Mesh & Pedometer"]
+        StepEngine["Dual-Engine Step Tracker (Health Connect & CoreMotion)"]
         Store["SecureStore & AsyncStorage"]
         RevCat["RevenueCat SDK (Paywall Guard)"]
     end
 
     subgraph EdgeBackend["Edge & Backend Layer (Next.js 14 App Router / Supabase Edge)"]
         AuthMid["NextAuth.js & JWT Middleware"]
-        EdgePlanner["/api/planner (Server Actions)"]
+        EdgePlanner["/api/planner (Server Actions & Edge Function)"]
         EdgeFood["/api/logs/food (Ephemeral Handler)"]
         Webhooks["/api/webhooks/revenuecat"]
         Cron["/api/cron/purge-free-logs"]
+        RetryEngine["Decorrelated Jitter Backoff (503/429 Retry)"]
     end
 
     subgraph IntelligenceLayer["Clinical & AI Services"]
-        Gemini["Google Gemini 1.5 Flash (Vision & Reasoning)"]
+        Gemini38["Google Gemini 3.8 Flash LTS (Primary Model)"]
+        Gemini31["Google Gemini 3.1 Flash Lite (High-Speed Fallback)"]
+        ThinkingConfig["Calibrated Thinking Budget (128 Tokens Plan / 0 Tokens Vision)"]
         DDI["4-Tier Drug Interaction Engine"]
         RxNav["NIH RxNav REST API (Levenshtein Fuzzy Match)"]
         OpenFDA["OpenFDA Drug Label API"]
@@ -42,19 +46,24 @@ flowchart TD
         PG[(PostgreSQL 15 - Supabase)]
         PrismaORM["Prisma ORM Client"]
         Vault["Supabase Secrets & Encrypted Vault"]
+        RLS["Row-Level Security (Explicit Type Cast)"]
     end
 
     %% Client to Backend Flow
     Cam -->|"Ephemeral Base64 (Volatile RAM)"| EdgeFood
     Sensors -->|"Haversine Distance & BLE GATT"| UI
+    StepEngine -->|"Live Daily Steps & Cadence"| UI
     UI -->|"Session Auth & JWT"| AuthMid
     RevCat -->|"Receipt & Entitlement Check"| Webhooks
-    Store <-->|"Offline Cache"| UI
+    Store <-->|"Offline Cache & Midnight Rollover"| StepEngine
 
     %% Backend to Intelligence Flow
-    EdgeFood -->|"In-Memory Image Stream"| Gemini
+    EdgeFood -->|"In-Memory Image Stream"| Gemini38
     EdgeFood -->|"Medication Cross-Reference"| DDI
-    EdgePlanner -->|"Dietary Target Synthesis"| Gemini
+    EdgePlanner --> RetryEngine
+    RetryEngine -->|"Primary Prompt + 128 Thinking Tokens"| Gemini38
+    RetryEngine -.->|"Transient Failover"| Gemini31
+    Gemini38 --- ThinkingConfig
     DDI -->|"Fuzzy Drug Normalization"| RxNav
     DDI -->|"Drug Label Adverse Events"| OpenFDA
 
@@ -64,7 +73,7 @@ flowchart TD
     EdgePlanner -->|"Meal Plan JSON"| PrismaORM
     Webhooks -->|"Subscription Sync"| PrismaORM
     Cron -->|"Purge Logs > 14 Days"| PrismaORM
-    PrismaORM --> PG
+    PrismaORM --> RLS --> PG
     Vault -.->|"API Keys & Service Role"| EdgeBackend
 ```
 
@@ -116,6 +125,29 @@ sequenceDiagram
 ---
 
 ## 3. Sensor & Hardware Telemetry Subsystem
+
+### Dual-Engine Step Tracking & Midnight Boundary Pipeline
+```mermaid
+flowchart TD
+    Init["App Launch / Background Resume"] --> OSCheck{"Platform OS Check"}
+    
+    OSCheck -->|"Android"| HC["Google Health Connect / Samsung Health API"]
+    OSCheck -->|"iOS"| CoreMotion["Apple HealthKit / CoreMotion Pedometer"]
+    
+    HC -->|"Granted"| LiveStepsHC["Fetch Aggregated Daily Steps (Since 00:00 Local)"]
+    HC -->|"Unavailable / Denied"| PocketSensor["Device Hardware Motion Pedometer (expo-sensors)"]
+    CoreMotion --> LiveStepsCM["Fetch CoreMotion Real-Time Steps"]
+    
+    LiveStepsHC --> Calibrate["Step Calibrator & Cadence Engine"]
+    LiveStepsCM --> Calibrate
+    PocketSensor -->|"Base Offset Tracking"| Calibrate
+    
+    Calibrate --> MidnightCheck{"Is Local Clock >= 00:00:00.050?"}
+    MidnightCheck -->|"Midnight Rollover"| Reset["Zero Steps, Flush Daily History, Clear Offset"]
+    MidnightCheck -->|"Within Day"| Store["Update appStorage Local Cache (Key: YYYY-MM-DD)"]
+    
+    Store --> LiveSync["Broadcast to Dashboard (index.tsx) & Workouts (workouts.tsx)"]
+```
 
 ### GPS Workout & Pace Calculation Pipeline
 ```mermaid

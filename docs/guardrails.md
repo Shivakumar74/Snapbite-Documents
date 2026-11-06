@@ -62,6 +62,19 @@ Every implemented feature is encapsulated within deterministic programmatic guar
   }
   ```
 
+### Guardrail 1.4: Calibrated Thinking Budget (128 Tokens vs 0 Tokens)
+- **Hazard**: Unconstrained chain-of-thought generation in Large Language Models causes severe latency spikes (>15s) or exhausts token allowances on simple visual scans. Conversely, disabling reasoning completely causes missed pharmacological edge cases.
+- **Enforcement**:
+  - **Vision Plate Inference**: `thinkingBudget: 0`. Maximizes throughput for sub-second plate analysis without reasoning overhead.
+  - **7-Day Meal Planning & Drug Checks**: `thinkingBudget: 128`. Allocates a dedicated clinical scratchpad allowing Gemini 3.8 Flash LTS to verify ingredient interactions, macro arithmetic, and drug contraindications before emitting final JSON.
+
+### Guardrail 1.5: Production Decorrelated Jitter Retry Engine
+- **Hazard**: Transient upstream API overload (HTTP 503) or rate limits (HTTP 429) cause cascading application failures and user frustration if retried synchronously (thundering herd problem).
+- **Enforcement**:
+  - Network requests implement a 2-stage exponential retry with decorrelated randomized jitter:
+    $$\text{delay} = \text{random}(400\text{ms}, 800\text{ms} \cdot 2^{\text{attempt}})$$
+  - Dual-pool fallback automatically routes requests from `gemini-3.8-flash` to `gemini-3.1-flash-lite` if the primary model remains saturated.
+
 ---
 
 ## 2. Feature: Clinical Drug-Nutrient & Drug-Drug Safety Engine
@@ -124,6 +137,13 @@ Every implemented feature is encapsulated within deterministic programmatic guar
 - **Hazard**: Streaming raw JSON arrays of 5,000 coordinate objects over cellular networks creates bandwidth overhead and high database write latency.
 - **Enforcement**:
   - Encodes coordinates using the Google Encoded Polyline Algorithm into a compact ASCII string prior to database submission, reducing payload size by over $90\%$.
+
+### Guardrail 3.4: Dual-Engine Step Tracking & Local Midnight Rollover
+- **Hazard**: Step count discrepancies between health aggregators (Google Health Connect / Apple Health) and hardware pedometers, as well as step accumulator corruption when crossing timezone boundaries or device reboots.
+- **Enforcement**:
+  - Dynamically detects Google Health Connect / Samsung Health on Android and CoreMotion on iOS, falling back gracefully to device accelerometer sensors (`expo-sensors`).
+  - Strict local midnight boundary scheduling: Automatically zeroes daily steps at 12:00:00 AM local time with a `50ms` anti-jitter buffer to prevent clock skew race conditions.
+  - Base step offset tracking: Preserves daily continuity if the device restarts mid-day, ensuring steps never decrement or double-count.
 
 ---
 
@@ -191,8 +211,18 @@ Every implemented feature is encapsulated within deterministic programmatic guar
 ### Guardrail 6.3: Absolute Right to be Forgotten (One-Click Purge)
 - **Hazard**: Partial account deletion leaving orphaned patient health records in relational tables.
 - **Enforcement**:
-  - Schema defines cascading deletions (`onDelete: Cascade`) across all relational children (`FoodLog`, `MoodLog`, `ActivityLog`, `MedicationLog`, `UserHabit`, `DoctorReport`).
+  - Schema defines cascading deletions (`onDelete: Cascade`) across all relational children (`FoodLog`, `MoodLog`, `ActivityLog`, `MedicationLog`, `UserHabit`, `DoctorReport`, `MedicationDoseLog`, `BleDeviceLog`).
   - Executing account deletion completely purges every trace of user data from PostgreSQL within a single atomic transaction.
+
+### Guardrail 6.4: Explicit Type Casting in PostgreSQL Row-Level Security
+- **Hazard**: PostgreSQL implicit type coercion between Supabase authentication tokens (`auth.uid()`, typically UUID) and application user identifiers (`User.id`, TEXT/CUID) can lead to subtle comparison bugs or security bypasses in multi-tenant environments.
+- **Enforcement**:
+  - All RLS table policies explicitly cast both operands:
+    ```sql
+    CREATE POLICY "Production DoctorReport All" ON "DoctorReport" 
+        FOR ALL USING ((auth.uid())::text = "userId"::text);
+    ```
+  - Eliminates silent coercion failures and enforces strict tenant isolation at the database engine level.
 
 ---
 

@@ -10,7 +10,7 @@
 [![Expo](https://img.shields.io/badge/Expo-v57.0-000020?logo=expo&logoColor=white)](https://expo.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.1-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)](https://supabase.com/)
-[![Gemini AI](https://img.shields.io/badge/AI-Google_Gemini_1.5_Flash-8E75C2?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Gemini AI](https://img.shields.io/badge/AI-Gemini_3.8_Flash_LTS_%26_3.1_Flash_Lite-8E75C2?logo=google&logoColor=white)](https://ai.google.dev/)
 [![DPDP Act Compliant](https://img.shields.io/badge/Compliance-DPDP_Act_2023-00C853)](https://www.meity.gov.in/)
 
 > **Next-Generation AI-Driven Clinical Nutrition, Ephemeral Vision Analysis, and Cross-Platform Telemetry Ecosystem.**
@@ -51,10 +51,10 @@
 | :--- | :--- | :--- | :--- |
 | **Mobile Frontend** | **React Native + Expo Router** | `0.86 / v57.0` | Enables a single TypeScript codebase deployed natively across iOS, Android, and Web, with instant deep-linking and hardware sensor modules. |
 | **Web & API Backend** | **Next.js App Router** | `14.1.4` | Offers lightning-fast Server Actions, Edge API routes, unified SSR, and secure backend middleware without needing a separate standalone server. |
-| **Relational Database** | **PostgreSQL (Supabase)** | `PG 15` | Provides enterprise relational integrity, JSONB support for meal planning schemas, and Row-Level Security (RLS) for patient-grade data isolation. |
-| **ORM & Data Modeling** | **Prisma ORM** | `5.12.0` | Provides compile-time type safety, automated migrations, and high-performance querying across users, food logs, and telemetry models. |
-| **Multimodal Vision & AI** | **Google Gemini 1.5 Flash** | `v0.24` | Chosen for its sub-second token latency, multi-modal image token parsing, and high accuracy in recognizing complex ethnic culinary dishes. |
-| **Device Hardware** | **Expo Location & Core Bluetooth** | `v57.0` | Real-time GPS coordinate streaming, Haversine ground-distance calculation, and BLE GATT service discovery for medical health peripherals. |
+| **Relational Database** | **PostgreSQL (Supabase)** | `PG 15` | Enterprise relational integrity, JSONB schemas, and hardened Row-Level Security (RLS) with explicit string typecasting (`auth.uid()::text = userId::text`). |
+| **ORM & Data Modeling** | **Prisma ORM** | `5.12.0` | Compile-time type safety, migrations, and high-performance querying across users, food logs, doctor reports, and telemetry models. |
+| **Multimodal Vision & AI** | **Google Gemini 3.8 Flash LTS & 3.1 Flash Lite** | `LTS / v1beta` | Dual-pool routing with calibrated 128-token scratchpad thinkingBudget for clinical planning, zero-thinking sub-second vision inference, and decorrelated jitter exponential retry. |
+| **Device Hardware & Telemetry** | **Expo Location, CoreMotion & Health Connect** | `v57.0` | Real-time dual-engine step tracking, cadence calculations, local 12:00:00 AM midnight reset boundary, and BLE GATT medical device mesh. |
 | **Monetization & Entitlements**| **RevenueCat SDK** | `v8.0` | Abstracts Apple StoreKit 2 and Google Play Billing with real-time server-side webhook validation and anti-tampering guards. |
 | **UI & Styling** | **TailwindCSS / NativeWind** | `v3.4` | Atomic utility-first design system ensuring exact visual parity between mobile devices and responsive web dashboards. |
 
@@ -62,11 +62,14 @@
 
 ## ⚡ Key Features Built
 
-- **📸 Zero-Storage Multimodal Food Scanner**: Photograph any food plate or packaging; Gemini Vision calculates caloric density, macronutrient breakdowns (Protein, Carbs, Fats), and glycemic load within volatile memory. Zero photo bytes are stored in the database.
+- **📸 Zero-Storage Multimodal Food Scanner (Gemini 3.8 Flash)**: Photograph any food plate or packaging; Gemini Vision calculates caloric density, macronutrient breakdowns (Protein, Carbs, Fats), and glycemic load within volatile memory. Zero photo bytes are stored in the database.
 - **💊 Institutional Drug-Drug & Drug-Nutrient Safety Guardrails**: Real-time evaluation of food ingredients against active medications (e.g., detecting Tyramine in aged cheeses for MAOI users, or Vitamin K surges for Warfarin patients).
+- **🚶‍♂️ Dual-Engine Step Tracking & Cadence Telemetry**: Unified cross-platform engine integrating Google Health Connect, Samsung Health, Apple Health/CoreMotion, and phone motion sensors with strict local 12:00:00 AM midnight reset and live dashboard synchronization.
 - **🗺️ Live GPS Route Telemetry & Athletic Silhouette Cards**: Tracks live running and walking routes with jitter rejection filters, generates polyline route maps, and renders exportable social trophy cards.
-- **🩺 BLE Medical Peripheral Discovery**: Connects directly via Bluetooth Low Energy to certified blood pressure monitors, continuous glucose monitors (CGM), smart scales, and pulse oximeters.
-- **🍲 Adaptive Cultural Meal Planner**: Custom-tailored meal scheduling respecting cultural/regional cuisines (Indian, Mediterranean, Western, East Asian) while aligning with diabetic or hypertension restrictions.
+- **🩺 BLE Medical Peripheral Discovery & Device Mesh**: Connects directly via Bluetooth Low Energy to certified blood pressure monitors, continuous glucose monitors (CGM), smart scales, and pulse oximeters, tracked in `BleDeviceLog`.
+- **📑 Clinical Diagnostics & Lab Reports Vault (`DoctorReport`)**: Secure upload, parsing, and AI synthesis of PDF/image laboratory scans, biomarker profiles, and pathology reports.
+- **💉 Sliding Scale Insulin & Medication Intake (`MedicationDoseLog`)**: Logs precise insulin dosages and units taken with direct blood glucose correlation.
+- **🍲 Adaptive Cultural Meal Planner (Gemini 3.8 Flash + 128 Thinking Scratchpad)**: Custom-tailored meal scheduling respecting cultural/regional cuisines (Indian, Mediterranean, Western, East Asian) while aligning with diabetic or hypertension restrictions.
 - **💧 Smart Hydration & Habit Streaks**: Dynamic water consumption targets calculated from ambient temperature, active calories burned, and real-time habit completion micro-streaks.
 - **🔒 DPDP Act 2023 & GDPR Privacy Compliance**: One-click data export, automated 14-day log pruning for free-tier users, and absolute "Right to be Forgotten" account purges.
 
@@ -192,8 +195,12 @@ npm run web
 | Functional Area | Core Guardrail Implemented | Failure Mitigation |
 | :--- | :--- | :--- |
 | **Food & Vision AI** | Zero-Storage Ephemeral RAM processing | Images never hit disk or S3 buckets; memory freed post-inference. |
+| **Model Optimization** | Calibrated Thinking Budget (128 vs 0 tokens) | 128 scratchpad tokens for complex clinical reasoning; 0 tokens for sub-second vision inference. |
+| **AI Reliability** | Decorrelated Jitter Exponential Retry | Automatically handles 503 Overload and 429 Rate Limits without causing server thundering herds. |
+| **Step Tracking** | Dual-Engine Fallback & Local Midnight Reset | Syncs Health Connect with hardware sensors; strictly zeroes at 12:00:00 AM with 50ms anti-jitter offset. |
 | **Pharmacology** | Deterministic 4-tier drug-food matrix | Instant local lookup (<5ms) prevents hallucinatory LLM approvals. |
 | **GPS Athletics** | Haversine velocity filter & jitter threshold | Rejects stationary GPS drift (<25m in 8s ignored). |
+| **Database Security**| Explicit Type Casting in RLS Policies | `auth.uid()::text = userId::text` prevents cross-tenant schema coercion leaks. |
 | **API Quotas** | Daily consumption rate-limiting per user tier | Free users capped at 5 scans/day; automatic paywall tripwire. |
 | **Compliance** | DPDP Act 2023 & GDPR automated cron purge | Free user biometric logs auto-purged after 14 days without consent. |
 

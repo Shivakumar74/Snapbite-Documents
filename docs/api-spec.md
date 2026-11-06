@@ -32,7 +32,7 @@ Every failed request returns a uniform JSON error payload:
 ## 1. Ephemeral Multimodal Food Scan & Macro Inference
 
 ### `POST /api/logs/food`
-Uploads an in-memory food plate photo or barcode string along with the user's active medication list. The server passes the image ephemerally to Google Gemini 1.5 Flash, cross-references ingredients against the 4-layer Clinical Safety Engine, persists the nutritional entry to PostgreSQL, and immediately frees the image buffer from RAM.
+Uploads an in-memory food plate photo or barcode string along with the user's active medication list. The server passes the image ephemerally to Google Gemini 3.8 Flash LTS (`thinkingBudget: 0`), cross-references ingredients against the 4-layer Clinical Safety Engine, persists the nutritional entry to PostgreSQL, and immediately frees the image buffer from RAM.
 
 #### Headers
 | Key | Type | Description |
@@ -150,7 +150,7 @@ If the meal contains a contraindicated food (e.g., patient on Warfarin eating co
 ## 2. Adaptive AI Meal Planner & Cultural Synthesis
 
 ### `POST /api/planner`
-Generates or swaps personalized 7-day nutritional plans synthesized across daily caloric limits, cultural cuisine, allergies, and patient medications.
+Generates or swaps personalized 7-day nutritional plans synthesized across daily caloric limits, cultural cuisine, allergies, and patient medications. Powered by Google Gemini 3.8 Flash LTS with a calibrated `128`-token clinical reasoning scratchpad and automatic fallback to `gemini-3.1-flash-lite` on upstream load.
 
 #### Headers
 | Key | Type | Description |

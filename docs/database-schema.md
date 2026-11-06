@@ -20,7 +20,9 @@ erDiagram
     User ||--o{ MoodLog : "records"
     User ||--o{ ActivityLog : "performs"
     User ||--o{ MedicationLog : "takes"
+    User ||--o{ MedicationDoseLog : "records dose"
     User ||--o{ DoctorReport : "uploads"
+    User ||--o{ BleDeviceLog : "pairs peripheral"
     User ||--o| UserSubscription : "owns"
     User ||--o{ Habit : "creates custom"
 
@@ -160,6 +162,16 @@ erDiagram
         DateTime createdAt
     }
 
+    MedicationDoseLog {
+        String id PK "uuid()"
+        String userId FK
+        String medicationId FK
+        Float unitsTaken "1"
+        Float bloodGlucose
+        String notes
+        DateTime loggedAt
+    }
+
     DoctorReport {
         String id PK "uuid()"
         String userId FK
@@ -171,6 +183,17 @@ erDiagram
         Int fileSizeBytes
         String aiSummary "Text"
         DateTime createdAt
+    }
+
+    BleDeviceLog {
+        String id PK "uuid()"
+        String userId FK
+        String deviceName
+        String deviceType
+        String macAddress
+        Boolean isConnected "true"
+        String lastTelemetry "JSONB"
+        DateTime pairedAt
     }
 
     UserSubscription {
@@ -271,6 +294,52 @@ Maintains prescription schedules to power the Clinical DDI Engine.
 
 ---
 
+### Table: `DoctorReport`
+Secure clinical vault for laboratory pathology scans, blood work panels, and diagnostic PDFs.
+| Column | Type | Nullable | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `TEXT` | No | `gen_random_uuid()` | Unique primary key. |
+| `userId` | `TEXT` | No | - | Foreign Key $\to$ `User.id` (`ON DELETE CASCADE`). |
+| `title` | `TEXT` | No | - | Report name (e.g., "Comprehensive Metabolic Panel"). |
+| `doctorOrLab` | `TEXT` | Yes | `NULL` | Ordering physician or laboratory provider. |
+| `reportDate` | `TIMESTAMPTZ`| Yes | `now()` | Date the diagnostic procedure occurred. |
+| `fileUrl` | `TEXT` | No | - | Encrypted storage URI. |
+| `fileType` | `TEXT` | Yes | `'application/pdf'`| Mime type (`application/pdf`, `image/jpeg`). |
+| `fileSizeBytes`| `BIGINT` | Yes | `NULL` | File size for storage tracking. |
+| `aiSummary` | `TEXT` | Yes | `NULL` | Gemini clinical biomarker synthesis and red-flag alerts. |
+| `createdAt` | `TIMESTAMPTZ`| No | `now()` | Upload timestamp. |
+
+---
+
+### Table: `MedicationDoseLog`
+Sliding scale insulin and prescription dose tracking with blood glucose correlation.
+| Column | Type | Nullable | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `TEXT` | No | `gen_random_uuid()` | Primary key. |
+| `userId` | `TEXT` | No | - | Foreign Key $\to$ `User.id` (`ON DELETE CASCADE`). |
+| `medicationId`| `TEXT` | Yes | `NULL` | Foreign Key $\to$ `Medication.id`. |
+| `unitsTaken` | `NUMERIC` | No | `1` | Dosage units (e.g. 10 units Lantus). |
+| `bloodGlucose`| `NUMERIC` | Yes | `NULL` | Measured pre/post-prandial blood glucose (mg/dL). |
+| `notes` | `TEXT` | Yes | `NULL` | Patient notes or meal correlation. |
+| `loggedAt` | `TIMESTAMPTZ`| No | `now()` | Exact administration timestamp. |
+
+---
+
+### Table: `BleDeviceLog`
+Active registry of paired Bluetooth Low Energy medical peripherals and telemetry cache.
+| Column | Type | Nullable | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `TEXT` | No | `gen_random_uuid()` | Primary key. |
+| `userId` | `TEXT` | No | - | Foreign Key $\to$ `User.id` (`ON DELETE CASCADE`). |
+| `deviceName` | `TEXT` | No | - | Peripheral broadcast name (e.g. "Omron BP7000"). |
+| `deviceType` | `TEXT` | No | - | "BLOOD_PRESSURE", "SMART_SCALE", "PULSE_OXIMETER", "CGM". |
+| `macAddress` | `TEXT` | Yes | `NULL` | Hardware MAC address or CoreBluetooth UUID. |
+| `isConnected` | `BOOLEAN` | No | `true` | Live GATT connection state. |
+| `lastTelemetry`| `JSONB` | Yes | `'{}'` | Most recent biometric readings cached as JSONB. |
+| `pairedAt` | `TIMESTAMPTZ`| No | `now()` | Initial pairing timestamp. |
+
+---
+
 ### Table: `UserSubscription`
 Authoritative billing and entitlement state synced with RevenueCat.
 | Column | Type | Nullable | Default | Description |
@@ -307,3 +376,22 @@ To optimize high-traffic queries and latency guarantees:
 5. `DoctorReport(userId, createdAt)`: Compound index for chronological medical record pagination.
 6. `UserSubscription(userId, status)`: Indexed for sub-millisecond Pro entitlement checks in API routes.
 7. `UserSubscription(expiresAt)`: Indexed for automated webhook subscription expiration sweeps.
+8. `BleDeviceLog(userId, isConnected)`: Compound index for active hardware sensor connectivity.
+9. `MedicationDoseLog(userId, loggedAt)`: Chronological index for glucose and insulin trend analysis.
+
+---
+
+## 📌 5. Hardened Row-Level Security (RLS) & Type Safety
+To prevent cross-tenant data leaks and eliminate PostgreSQL `UUID` vs `TEXT` type-coercion bypasses, all production tables enforce explicit type casting in RLS policies:
+
+```sql
+-- Explicit string cast ensures secure matching against Supabase auth.uid()
+CREATE POLICY "Production DoctorReport All" ON "DoctorReport" 
+    FOR ALL USING ((auth.uid())::text = "userId"::text);
+
+CREATE POLICY "Production MedicationDoseLog All" ON "MedicationDoseLog" 
+    FOR ALL USING ((auth.uid())::text = "userId"::text);
+
+CREATE POLICY "Production BleDeviceLog All" ON "BleDeviceLog" 
+    FOR ALL USING ((auth.uid())::text = "userId"::text);
+```
